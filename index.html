@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>編輯內容 · 九州旅行</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap');
+  :root{--ink:#1a1a2e;--washi:#f5f0e8;--red:#c0392b;--gold:#c9a84c;--mist:#e8e4dc;--blue-dark:#16213e;--text:#2c2c3e;--soft:#7a7a8c;--green:#2e7d5e}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans TC',sans-serif;background:var(--washi);color:var(--text);min-height:100vh}
+
+  header{background:var(--blue-dark);padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  header h1{color:white;font-size:1rem;font-weight:400;letter-spacing:.08em}
+  header a{color:var(--gold);font-size:.82rem;text-decoration:none;border:1px solid rgba(201,168,76,.4);padding:.4rem 1rem;border-radius:2px;white-space:nowrap}
+  header a:hover{background:rgba(201,168,76,.1)}
+
+  .container{max-width:860px;margin:0 auto;padding:2rem 1.5rem 5rem}
+
+  .save-bar{position:sticky;top:0;z-index:50;background:var(--washi);border-bottom:1px solid var(--mist);padding:.75rem 0;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  .save-status{font-size:.82rem;color:var(--soft)}
+  .save-status.saved{color:var(--green)}
+  .save-status.dirty{color:#c07a2b}
+  .save-status.error{color:var(--red)}
+
+  .btn{padding:.55rem 1.5rem;font-size:.85rem;font-family:'Noto Sans TC',sans-serif;border-radius:2px;cursor:pointer;border:none;transition:all .15s}
+  .btn-primary{background:var(--blue-dark);color:white}
+  .btn-primary:hover{background:#0d1426}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn-sm{padding:.3rem .8rem;font-size:.75rem;background:white;color:var(--text);border:1px solid var(--mist);cursor:pointer;border-radius:2px;font-family:'Noto Sans TC',sans-serif}
+  .btn-sm:hover{border-color:var(--soft)}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(192,57,43,.3);cursor:pointer;padding:.3rem .7rem;font-size:.72rem;border-radius:2px;font-family:'Noto Sans TC',sans-serif;white-space:nowrap}
+  .btn-danger:hover{background:rgba(192,57,43,.05)}
+
+  .editor-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+  .editor-tab{padding:.5rem 1.2rem;border:1px solid var(--mist);background:white;cursor:pointer;font-size:.82rem;color:var(--soft);border-radius:2px;transition:all .2s;font-family:'Noto Sans TC',sans-serif}
+  .editor-tab:hover{border-color:var(--gold)}
+  .editor-tab.active{background:var(--blue-dark);color:white;border-color:var(--blue-dark)}
+
+  .editor-panel{display:none}
+  .editor-panel.active{display:block}
+
+  .edit-card{background:white;border:1px solid var(--mist);border-radius:4px;margin-bottom:1.25rem;overflow:hidden}
+  .edit-card-header{padding:.9rem 1.25rem;background:#faf8f4;border-bottom:1px solid var(--mist);display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+  .edit-card-header h3{font-size:.88rem;font-weight:500;color:var(--ink)}
+  .edit-card-body{padding:1.25rem}
+
+  label{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin-bottom:.35rem;margin-top:.75rem}
+  label:first-child{margin-top:0}
+  textarea,input[type="text"],select{width:100%;font-family:'Noto Sans TC',sans-serif;font-size:.88rem;color:var(--text);border:1px solid var(--mist);border-radius:3px;padding:.5rem .75rem;background:white;transition:border-color .15s}
+  textarea:focus,input[type="text"]:focus,select:focus{outline:none;border-color:var(--gold)}
+  textarea{min-height:70px;resize:vertical}
+  .hint{font-size:.73rem;color:var(--soft);margin-top:.35rem;line-height:1.55}
+
+  .day-selector{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.25rem}
+  .day-btn{padding:.4rem .9rem;border:1px solid var(--mist);background:white;cursor:pointer;font-size:.78rem;color:var(--soft);border-radius:2px;font-family:'Noto Sans TC',sans-serif;transition:all .2s}
+  .day-btn:hover{border-color:var(--gold)}
+  .day-btn.active{background:var(--blue-dark);color:white;border-color:var(--blue-dark)}
+
+  .item-row{display:grid;grid-template-columns:90px 1fr 1fr auto auto;gap:.4rem;align-items:center;margin-bottom:.4rem}
+  .item-row input,.item-row select{font-size:.82rem;padding:.4rem .6rem}
+  .item-row-header{display:grid;grid-template-columns:90px 1fr 1fr auto auto;gap:.4rem;margin-bottom:.3rem}
+  .item-row-header span{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);padding:0 .6rem}
+  .add-row{margin-top:.5rem}
+
+  .shop-category{border:1px solid var(--mist);border-radius:3px;margin-bottom:1rem}
+  .shop-cat-header{padding:.65rem 1rem;background:#faf8f4;border-bottom:1px solid var(--mist);display:flex;align-items:center;gap:.5rem}
+  .shop-cat-header input{flex:1;font-weight:500}
+  .shop-items{padding:.75rem 1rem}
+  .shop-item-row{display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem}
+  .shop-item-row input{flex:1;font-size:.82rem;padding:.4rem .6rem}
+  .shop-item-row input.loc{flex:.8;color:var(--soft)}
+  .add-item-row{padding:.4rem 1rem .75rem;border-top:1px dashed var(--mist)}
+
+  .danger-zone{margin-top:2rem;padding:1rem 1.25rem;border:1px solid rgba(192,57,43,.2);border-radius:4px;background:rgba(192,57,43,.02);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  .danger-zone p{font-size:.82rem;color:var(--soft)}
+
+  /* Toast */
+  #toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--blue-dark);color:white;padding:.7rem 1.5rem;border-radius:3px;font-size:.85rem;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;border-left:3px solid var(--green);pointer-events:none}
+
+  @media(max-width:600px){
+    header{padding:1rem;gap:.5rem}
+    header h1{font-size:.85rem}
+    header a{padding:.35rem .7rem;font-size:.75rem}
+    .container{padding:1rem 1rem 4rem}
+    .save-bar{gap:.5rem}
+    .save-status{font-size:.75rem}
+    .btn{padding:.5rem 1rem;font-size:.8rem}
+    .editor-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.2rem;gap:.35rem}
+    .editor-tabs::-webkit-scrollbar{display:none}
+    .editor-tab{flex-shrink:0;padding:.45rem .85rem;font-size:.78rem;min-height:44px;display:flex;align-items:center}
+    .day-selector{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.2rem}
+    .day-selector::-webkit-scrollbar{display:none}
+    .day-btn{flex-shrink:0;min-height:44px;padding:.45rem .85rem}
+    .item-row-header{display:none}
+    .item-row{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:.35rem}
+    .item-row select:first-child{grid-column:1}
+    .item-row select:last-of-type{grid-column:2}
+    .item-row input:first-of-type{grid-column:1 / span 2}
+    .item-row input:last-of-type{grid-column:1 / span 2}
+    .item-row .btn-danger{grid-column:2;justify-self:end}
+    .shop-item-row{flex-wrap:wrap}
+    .shop-item-row input{min-width:0}
+    .shop-item-row input.loc{flex-basis:100%}
+    .edit-card-body{padding:1rem}
+    .edit-card-header{padding:.75rem 1rem}
+    .danger-zone{flex-direction:column;align-items:flex-start;gap:.75rem}
+    #toast{font-size:.78rem;padding:.6rem 1rem;white-space:normal;text-align:center;width:90%;max-width:320px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✏️ 編輯內容 · 九州旅行 2026</h1>
+  <a href="japan-trip.html">← 回到旅行網站</a>
+</header>
+
+<div class="container">
+  <div class="save-bar">
+    <span class="save-status" id="save-status">連線中…</span>
+    <button class="btn btn-primary" id="save-btn" onclick="saveAll()" disabled>儲存所有變更</button>
+  </div>
+
+  <div class="editor-tabs">
+    <button class="editor-tab active" onclick="switchTab('itinerary')">📅 每日行程</button>
+    <button class="editor-tab" onclick="switchTab('map')">🗾 地圖</button>
+    <button class="editor-tab" onclick="switchTab('shopping')">🛍 購物清單</button>
+    <button class="editor-tab" onclick="switchTab('notes')">📝 備忘</button>
+  </div>
+
+  <!-- ITINERARY -->
+  <div class="editor-panel active" id="panel-itinerary">
+    <div class="day-selector" id="day-selector"></div>
+    <div id="day-editor-body"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="editor-panel" id="panel-map">
+    <div class="edit-card">
+      <div class="edit-card-header"><h3>Google Maps 嵌入碼</h3></div>
+      <div class="edit-card-body">
+        <label>貼上 &lt;iframe&gt; 嵌入碼</label>
+        <textarea id="map-embed" rows="5" placeholder='<iframe src="https://www.google.com/maps/embed/v1/..." allowfullscreen></iframe>'></textarea>
+        <p class="hint">
+          取得方式：開啟 Google My Maps → 左側點「分享」→「嵌入我的地圖」→ 複製 iframe 碼貼到這裡。<br>
+          ⚠️ 需使用 <strong>My Maps</strong>（maps.google.com/maps/d）建立的清單，只需「可檢視」分享設定即可。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOPPING -->
+  <div class="editor-panel" id="panel-shopping">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">
+      <button class="btn btn-sm" onclick="addCategory()">＋ 新增分類</button>
+    </div>
+    <div id="shopping-editor"></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="editor-panel" id="panel-notes">
+    <div class="edit-card">
+      <div class="edit-card-header"><h3>備忘筆記</h3></div>
+      <div class="edit-card-body">
+        <label>自由備忘</label>
+        <textarea id="notes" rows="6" placeholder="例如：需預訂熊本城票券、租車資訊、家人藥品清單…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="danger-zone">
+    <p>重設所有內容為預設值（清除地圖、行程、購物清單所有修改）</p>
+    <button class="btn-danger" onclick="resetAll()">重設為預設</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAoOsOuQh97on1MJTeAdxyM2162TYSpVJI",
+  authDomain: "kyushu-7c4b0.firebaseapp.com",
+  projectId: "kyushu-7c4b0",
+  storageBucket: "kyushu-7c4b0.firebasestorage.app",
+  messagingSenderId: "593452211092",
+  appId: "1:593452211092:web:71238bde6536e90809cd81"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const tripDoc = doc(db, 'trips', 'kyushu2026');
+
+// ── Defaults ──────────────────────────────────────────────────────────
+const DEFAULTS = {
+  mapEmbed: '', notes: '',
+  days: [
+    { date:'6月16日（週二）', theme:'啟程 ✈ 抵達福岡', hotel:'Fu-rin 飯店（福岡）', items:[
+      {cat:'交通', name:'前往小港機場', note:'', type:'transport'},
+      {cat:'航班', name:'14:30 KHH → 17:55 FUK', note:'', type:'highlight'},
+      {cat:'交通', name:'福岡機場 → 博多車站', note:'', type:'transport'},
+      {cat:'購物', name:'博多車站藥妝', note:'涼感噴霧、面膜', type:''},
+      {cat:'晚餐', name:'中州屋台街', note:'', type:'highlight'}
+    ]},
+    { date:'6月17日（週三）', theme:'市區逛街 · 天神', hotel:'Fu-rin 飯店（福岡）', items:[
+      {cat:'早餐', name:'買麵包', note:'Dacomecca / Full Full', type:''},
+      {cat:'午餐', name:'一蘭拉麵 總本店', note:'', type:'highlight'},
+      {cat:'購物', name:'Mina天神、天神地下街', note:'', type:''},
+      {cat:'購物', name:'Big Camera（1店、2店）', note:'', type:''},
+      {cat:'晚餐', name:'水炊鍋 / 牛腸鍋', note:'', type:'highlight'}
+    ]},
+    { date:'6月18日（週四）', theme:'門司港 · 小倉 · 皿倉山', hotel:'Fu-rin 飯店（福岡）', items:[
+      {cat:'出發', name:'門司港', note:'', type:'transport'},
+      {cat:'午餐', name:'燒咖哩：Princess Phi Phi', note:'', type:'highlight'},
+      {cat:'景點', name:'小倉城', note:'', type:''},
+      {cat:'景點', name:'皿倉山展望台', note:'', type:'highlight'},
+      {cat:'晚餐', name:'一蘭拉麵總本店', note:'', type:''}
+    ]},
+    { date:'6月19日（週五）', theme:'神社參拜 · 太宰府', hotel:'Fu-rin 飯店（福岡）', items:[
+      {cat:'景點', name:'太宰府 天滿宮', note:'', type:'highlight'},
+      {cat:'景點', name:'天開稻荷神社', note:'', type:''},
+      {cat:'景點', name:'寶滿宮竈門神社', note:'', type:''},
+      {cat:'午餐', name:'太宰府攤販', note:'', type:''},
+      {cat:'購物', name:'博多運河城', note:'', type:''},
+      {cat:'購物', name:'博多阪急百貨B1', note:'買伴手禮', type:''},
+      {cat:'晚餐', name:'LOPIA超市', note:'', type:'highlight'}
+    ]},
+    { date:'6月20日（週六）', theme:'博多 → 熊本', hotel:'fav KUMAMOTO（熊本）', items:[
+      {cat:'景點', name:'櫛田神社', note:'', type:''},
+      {cat:'午餐', name:'麵屋兼虎', note:'', type:'highlight'},
+      {cat:'移動', name:'博多 → 熊本', note:'', type:'transport'},
+      {cat:'景點', name:'熊本熊廣場', note:'', type:''},
+      {cat:'購物', name:'AMU PLAZA', note:'', type:''},
+      {cat:'購物', name:'Big Camera', note:'', type:''}
+    ]},
+    { date:'6月21日（週日）', theme:'阿蘇火山一日遊', hotel:'fav KUMAMOTO（熊本）', items:[
+      {cat:'景點', name:'草千里之濱', note:'', type:'highlight'},
+      {cat:'景點', name:'阿蘇火山口', note:'', type:'highlight'},
+      {cat:'景點', name:'阿蘇神社', note:'', type:''}
+    ]},
+    { date:'6月22日（週一）', theme:'熊本市區探索', hotel:'fav KUMAMOTO（熊本）', items:[
+      {cat:'景點', name:'熊本城', note:'', type:'highlight'},
+      {cat:'景點', name:'湧湧座', note:'', type:''},
+      {cat:'景點', name:'櫻之馬場 城彩苑', note:'', type:''},
+      {cat:'購物', name:'上下通商店街', note:'', type:''},
+      {cat:'購物', name:'買藥妝', note:'', type:''},
+      {cat:'晚餐', name:'福雞居酒屋', note:'', type:'highlight'}
+    ]},
+    { date:'6月23日（週二）', theme:'最後一天 · 返台', hotel:'', items:[
+      {cat:'景點', name:'水前寺成趣園', note:'考慮穿和服體驗', type:''},
+      {cat:'航班', name:'19:50 KMJ → 21:40 KHH', note:'', type:'highlight'}
+    ]}
+  ],
+  shopping: [
+    { category:'💊 藥妝', items:[
+      {name:'涼感噴霧', location:'博多車站藥妝'},
+      {name:'面膜', location:'博多車站藥妝'},
+      {name:'藥妝（自行添加）', location:'熊本市區'}
+    ]},
+    { category:'🎁 伴手禮', items:[
+      {name:'伴手禮', location:'博多阪急百貨 B1'},
+      {name:'超市食品', location:'LOPIA超市'}
+    ]},
+    { category:'📱 3C 家電', items:[
+      {name:'Big Camera', location:'天神 1店、2店'},
+      {name:'Big Camera', location:'熊本'}
+    ]},
+    { category:'👗 服飾・雜貨', items:[
+      {name:'Mina天神', location:'福岡天神'},
+      {name:'天神地下街', location:'福岡天神'},
+      {name:'AMU PLAZA', location:'熊本車站'},
+      {name:'上下通商店街', location:'熊本市區'}
+    ]}
+  ]
+};
+
+// ── State ─────────────────────────────────────────────────────────────
+let currentData = null;
+let currentDay = 0;
+let isSaving = false;
+const CAT_OPTIONS = ['景點','餐廳','早餐','午餐','晚餐','購物','交通','移動','航班','住宿','出發','其他'];
+const ITEM_TYPES = ['','highlight','transport'];
+const TYPE_LABELS = {'':'一般','highlight':'重點','transport':'交通'};
+
+// ── UI helpers ────────────────────────────────────────────────────────
+function setStatus(msg, cls) {
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  el.className = 'save-status' + (cls ? ' '+cls : '');
+}
+
+function markDirty() { setStatus('有未儲存的變更 ●', 'dirty'); }
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = isError ? 'var(--red)' : 'var(--green)';
+  requestAnimationFrame(() => { t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)'; });
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(20px)'; }, 3000);
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────
+window.switchTab = (name) => {
+  const names = ['itinerary','map','shopping','notes'];
+  document.querySelectorAll('.editor-tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.editor-panel').forEach(p => p.classList.toggle('active', p.id==='panel-'+name));
+};
+
+// ── Day selector ──────────────────────────────────────────────────────
+function renderDaySelector() {
+  document.getElementById('day-selector').innerHTML = currentData.days.map((d,i) =>
+    `<button class="day-btn${i===currentDay?' active':''}" onclick="selectDay(${i})">Day ${i+1}</button>`
+  ).join('');
+}
+
+window.selectDay = (i) => { currentDay = i; renderDaySelector(); renderDayEditor(); };
+
+// ── Day editor ────────────────────────────────────────────────────────
+function catOptions(sel) { return CAT_OPTIONS.map(c=>`<option${c===sel?' selected':''}>${c}</option>`).join(''); }
+function typeOptions(sel) { return ITEM_TYPES.map(t=>`<option value="${t}"${t===sel?' selected':''}>${TYPE_LABELS[t]}</option>`).join(''); }
+
+function renderDayEditor() {
+  const day = currentData.days[currentDay];
+  const itemsHtml = day.items.map((item,ii) => `
+    <div class="item-row">
+      <select onchange="updateItem(${ii},'cat',this.value)">${catOptions(item.cat)}</select>
+      <input type="text" value="${esc(item.name)}" placeholder="名稱" oninput="updateItem(${ii},'name',this.value)">
+      <input type="text" value="${esc(item.note||'')}" placeholder="備註（選填）" oninput="updateItem(${ii},'note',this.value)">
+      <select style="width:72px" onchange="updateItem(${ii},'type',this.value)">${typeOptions(item.type||'')}</select>
+      <button class="btn-danger" onclick="removeItem(${ii})">✕</button>
+    </div>
+  `).join('');
+
+  document.getElementById('day-editor-body').innerHTML = `
+    <div class="edit-card">
+      <div class="edit-card-header"><h3>Day ${currentDay+1} 基本資訊</h3></div>
+      <div class="edit-card-body">
+        <label>日期</label>
+        <input type="text" value="${esc(day.date)}" oninput="updateDay('date',this.value)">
+        <label>主題標題</label>
+        <input type="text" value="${esc(day.theme)}" oninput="updateDay('theme',this.value)">
+        <label>今晚住宿（留空則不顯示）</label>
+        <input type="text" value="${esc(day.hotel||'')}" placeholder="例如：Fu-rin 飯店（福岡）" oninput="updateDay('hotel',this.value)">
+      </div>
+    </div>
+    <div class="edit-card">
+      <div class="edit-card-header"><h3>行程項目</h3></div>
+      <div class="edit-card-body">
+        <div class="item-row-header">
+          <span>類別</span><span>名稱</span><span>備註</span><span>樣式</span><span></span>
+        </div>
+        <div id="items-list">${itemsHtml}</div>
+        <div class="add-row"><button class="btn btn-sm" onclick="addItem()">＋ 新增項目</button></div>
+      </div>
+    </div>
+  `;
+}
+
+window.updateDay = (field, val) => { currentData.days[currentDay][field] = val; markDirty(); };
+window.updateItem = (ii, field, val) => { currentData.days[currentDay].items[ii][field] = val; markDirty(); };
+window.addItem = () => { currentData.days[currentDay].items.push({cat:'景點',name:'',note:'',type:''}); renderDayEditor(); markDirty(); };
+window.removeItem = (ii) => { currentData.days[currentDay].items.splice(ii,1); renderDayEditor(); markDirty(); };
+
+// ── Shopping editor ───────────────────────────────────────────────────
+function renderShoppingEditor() {
+  document.getElementById('shopping-editor').innerHTML = currentData.shopping.map((cat,ci) => `
+    <div class="shop-category">
+      <div class="shop-cat-header">
+        <input type="text" value="${esc(cat.category)}" placeholder="分類名稱" oninput="updateCatName(${ci},this.value)">
+        <button class="btn-danger" onclick="removeCategory(${ci})">刪除分類</button>
+      </div>
+      <div class="shop-items">
+        ${cat.items.map((item,ii) => `
+          <div class="shop-item-row">
+            <input type="text" value="${esc(item.name)}" placeholder="品項名稱" oninput="updateShopItem(${ci},${ii},'name',this.value)">
+            <input type="text" class="loc" value="${esc(item.location||'')}" placeholder="購買地點" oninput="updateShopItem(${ci},${ii},'location',this.value)">
+            <button class="btn-danger" onclick="removeShopItem(${ci},${ii})">✕</button>
+          </div>
+        `).join('')}
+      </div>
+      <div class="add-item-row"><button class="btn btn-sm" onclick="addShopItem(${ci})">＋ 新增品項</button></div>
+    </div>
+  `).join('');
+}
+
+window.updateCatName = (ci,val) => { currentData.shopping[ci].category=val; markDirty(); };
+window.updateShopItem = (ci,ii,field,val) => { currentData.shopping[ci].items[ii][field]=val; markDirty(); };
+window.addCategory = () => { currentData.shopping.push({category:'新分類',items:[{name:'',location:''}]}); renderShoppingEditor(); markDirty(); };
+window.removeCategory = (ci) => { if(!confirm('確定刪除？')) return; currentData.shopping.splice(ci,1); renderShoppingEditor(); markDirty(); };
+window.addShopItem = (ci) => { currentData.shopping[ci].items.push({name:'',location:''}); renderShoppingEditor(); markDirty(); };
+window.removeShopItem = (ci,ii) => { currentData.shopping[ci].items.splice(ii,1); renderShoppingEditor(); markDirty(); };
+
+// ── Save to Firestore ─────────────────────────────────────────────────
+window.saveAll = async () => {
+  if (isSaving) return;
+  isSaving = true;
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  setStatus('儲存中…');
+
+  // 收集 map & notes
+  currentData.mapEmbed = document.getElementById('map-embed').value.trim();
+  currentData.notes = document.getElementById('notes').value.trim();
+
+  try {
+    await setDoc(tripDoc, currentData);
+    setStatus('✓ 已同步到雲端，所有裝置即時更新', 'saved');
+    showToast('✓ 儲存成功，所有裝置即時更新');
+    setTimeout(() => setStatus('已同步'), 4000);
+  } catch(err) {
+    console.error(err);
+    setStatus('⚠️ 儲存失敗，請檢查網路', 'error');
+    showToast('⚠️ 儲存失敗：' + err.message, true);
+  } finally {
+    isSaving = false;
+    btn.disabled = false;
+  }
+};
+
+// ── Reset ─────────────────────────────────────────────────────────────
+window.resetAll = async () => {
+  if (!confirm('確定要重設所有內容嗎？此操作無法還原。')) return;
+  try {
+    await setDoc(tripDoc, DEFAULTS);
+    showToast('已重設為預設值');
+  } catch(err) {
+    showToast('重設失敗：' + err.message, true);
+  }
+};
+
+// ── Load from Firestore (once) & listen for remote changes ────────────
+function initUI(data) {
+  currentData = { ...JSON.parse(JSON.stringify(DEFAULTS)), ...data };
+  document.getElementById('map-embed').value = currentData.mapEmbed || '';
+  document.getElementById('notes').value = currentData.notes || '';
+  renderDaySelector();
+  renderDayEditor();
+  renderShoppingEditor();
+  document.getElementById('save-btn').disabled = false;
+  setStatus('已載入，可開始編輯');
+}
+
+// 監聽 Firestore 即時變更（其他裝置更新時，編輯頁也會收到通知）
+onSnapshot(tripDoc, (snap) => {
+  if (snap.exists()) {
+    if (!currentData) {
+      // 首次載入
+      initUI(snap.data());
+    } else {
+      // 其他裝置改了資料 — 只在沒有未儲存變更時才更新
+      const statusEl = document.getElementById('save-status');
+      if (!statusEl.classList.contains('dirty')) {
+        initUI(snap.data());
+        setStatus('已從雲端更新', 'saved');
+        setTimeout(() => setStatus('已同步'), 3000);
+      }
+    }
+  } else {
+    // 第一次：寫入預設資料
+    setDoc(tripDoc, DEFAULTS).then(() => initUI(DEFAULTS));
+  }
+}, (err) => {
+  console.error(err);
+  setStatus('⚠️ 無法連線到雲端', 'error');
+  // 離線 fallback：用預設值讓頁面可以操作
+  if (!currentData) initUI(DEFAULTS);
+});
+</script>
+</body>
+</html>
